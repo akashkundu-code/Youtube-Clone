@@ -4,6 +4,24 @@ import { User } from "../models/user.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
+//this method generate access and refresh token from model
+const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const refreshToken = user.generateRefreshToken();
+    const accessToken = user.generateAccessToken();
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "something went wrong while geneating access and referesh token"
+    );
+  }
+};
+
 const registerUser = asyncHandler(async (req, res) => {
   /*get user detail from frontend using frontend
   validation - not empty
@@ -99,4 +117,93 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered sucesfully"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  //input the field
+  //check the email or username is there or not
+  //find the user
+  //password check
+  //access and refresh token
+  //send cookie
+
+  //taking the input from user at once
+  const { email, username, password } = req.body;
+
+  //givu=ing error to validate both the fields are there
+  if (!username || !email) {
+    throw new ApiError(400, "Username or email is required");
+  }
+
+  //finding the user by username or email $or => is monogodb operator
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+
+  //throwing error if no user found
+  if (!user) {
+    throw new ApiError(404, "User doesnot exist");
+  }
+
+  //checking password is correct or now and we are doing it like this because of bycrypt
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(404, "Password is incorrect");
+  }
+
+  //generating accestoken and refresh token by methord we made
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+  const logedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const options = {
+    //used for cookiee
+    httpOnly: true,
+    secure: true,
+  };
+
+  // returning the result
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: logedInUser,
+          accessToken,
+          refreshToken,
+        },
+        "User Logedin Succesfully"
+      )
+    );
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+  const options = {
+    httpOnly: true,
+    secure: true,
+  }
+
+  return res
+  .status(200)
+  .clearCookie("accessToken",options)
+  .clearCookie("refreshToken",options)
+  .json(new ApiResponse(200,{},"user logged out succesfully"))
+});
+
+export { registerUser, loginUser, logoutUser };
