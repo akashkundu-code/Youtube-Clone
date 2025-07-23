@@ -67,7 +67,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // console.log(req.files);
 
   //avatar and images path
-  const avatarLocalPath = req.files?.avatar[0]?.path;
+  const avatarLocalPath = req.files?.avatar?.[0]?.path;
   //const coverImageLocalPath = req.files?.coverImage[0]?.path;
   let coverImageLocalPath;
   if (
@@ -81,7 +81,10 @@ const registerUser = asyncHandler(async (req, res) => {
   //check if the local path is there or not and then throw error
 
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file is required");
+    throw new ApiError(
+      400,
+      "Avatar file is required. Make sure you're uploading the avatar as a FILE in Postman, not as TEXT."
+    );
   }
 
   //upload to cloudinary
@@ -126,10 +129,21 @@ const loginUser = asyncHandler(async (req, res) => {
   //send cookie
 
   //taking the input from user at once
+  // console.log("Login - req.body:", req.body);
+  // console.log("Login - req.headers:", req.headers);
+
+  // Check if req.body exists
+  if (!req.body) {
+    throw new ApiError(
+      400,
+      "Request body is missing. Make sure you're sending JSON data correctly."
+    );
+  }
+
   const { email, username, password } = req.body;
 
   //givu=ing error to validate both the fields are there
-  if (!username || !email) {
+  if (!username && !email) {
     throw new ApiError(400, "Username or email is required");
   }
 
@@ -193,17 +207,17 @@ const logoutUser = asyncHandler(async (req, res) => {
     {
       new: true,
     }
-  )
+  );
   const options = {
     httpOnly: true,
     secure: true,
-  }
+  };
 
   return res
-  .status(200)
-  .clearCookie("accessToken",options)
-  .clearCookie("refreshToken",options)
-  .json(new ApiResponse(200,{},"user logged out succesfully"))
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "user logged out succesfully"));
 });
 
 export { registerUser, loginUser, logoutUser };
