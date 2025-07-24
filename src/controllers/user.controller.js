@@ -1,7 +1,11 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiErrors.js";
 import { User } from "../models/user.models.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+  extractPublicIdFromUrl,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -248,7 +252,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const { accessToken, newRefreshToken } =
       await generateAccessAndRefreshToken(user._id);
 
-    return res.status200
+    return res
+      .status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", newRefreshToken, options)
       .json(
@@ -278,76 +283,121 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "password changed successfully"));
 });
-const getCurrentUser = asyncHandler(async(req,res)=>{
-  return res
-  .status(200)
-  .json(200,req.user,"current user fetched successfully")
-})
-
-const updateAccountDetails = asyncHandler(async(req,res)=>{
-  const { fullName ,email} = req.body;
-  if(!fullName||!email){
-    throw new ApiError(400,"all fields are required")
-  }
-
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set : {
-        fullName : fullName,
-        email : email
-      }
-    },
-    {new : true} //this line helps to return the new user
-).select("-password")
-return res
-.status(200)
-.json(new ApiResponse(200,user,"Account details updated succesfully"))
-})
-
-const updateUserAvatar = asyncHandler(async(req,res)=>{
-  const avatarLocalPath = req.file?.path
-  if (!avatarLocalPath){
-    throw new ApiError(400,"avatar file is missing")
-  }
-  const avatar= await uploadOnCloudinary(avatarLocalPath)
-  if (!avatar.url){
-    throw new ApiError(401,"Error wile uploading avatar")
-  }
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set:{
-        avatar : avatar.url
-      }
-    },
-    {new : true}
-  ).select("-password")
-  return res
-  .status(200)
-  .json(new ApiResponse,(200,user,"Avatar updated Succesfully"))
-})
-const updateUserCoverImage = asyncHandler(async(req,res)=>{
-  const coverImageLocalPath = req.file?.path
-  if (!coverImageLocalPath){
-    throw new ApiError(400,"Cover image file is missing")
-  }
-  const coverImage= await uploadOnCloudinary(coverImageLocalPath)
-  if (!coverImage.url){
-    throw new ApiError(401,"Error wile uploading avatar")
-  }
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set:{
-        coverImage : coverImage.url
-      }
-    },
-    {new : true}
-  ).select("-password")
+const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(new ApiResponse(), (200, user, "Cover Image updated Succesfully"));
-})
+    .json(new ApiResponse(200, req.user, "current user fetched successfully"));
+});
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken ,changeCurrentPassword, getCurrentUser ,updateUserAvatar ,updateUserCoverImage};
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+  if (!fullName || !email) {
+    throw new ApiError(400, "all fields are required");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName: fullName,
+        email: email,
+      },
+    },
+    { new: true } //this line helps to return the new user
+  ).select("-password");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated succesfully"));
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "avatar file is missing");
+  }
+
+  // Get the current user to get the old avatar URL before updating
+  const currentUser = await User.findById(req.user?._id);
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
+  const oldAvatarUrl = currentUser.avatar;
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  if (!avatar.url) {
+    throw new ApiError(401, "Error while uploading avatar");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  // Delete the old avatar from cloudinary after successful update
+  if (oldAvatarUrl) {
+    const oldAvatarPublicId = extractPublicIdFromUrl(oldAvatarUrl);
+    if (oldAvatarPublicId) {
+      await deleteFromCloudinary(oldAvatarPublicId);
+    }
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar updated successfully"));
+});
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  const coverImageLocalPath = req.file?.path;
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "Cover image file is missing");
+  }
+
+  // Get the current user to get the old cover image URL before updating
+  const currentUser = await User.findById(req.user?._id);
+  if (!currentUser) {
+    throw new ApiError(404, "User not found");
+  }
+  const oldCoverImageUrl = currentUser.coverImage;
+
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  if (!coverImage.url) {
+    throw new ApiError(401, "Error while uploading cover image");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        coverImage: coverImage.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  // Delete the old cover image from cloudinary after successful update
+  if (oldCoverImageUrl) {
+    const oldCoverImagePublicId = extractPublicIdFromUrl(oldCoverImageUrl);
+    if (oldCoverImagePublicId) {
+      await deleteFromCloudinary(oldCoverImagePublicId);
+    }
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover Image updated successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateUserAvatar,
+  updateUserCoverImage,
+};

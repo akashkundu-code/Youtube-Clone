@@ -17,9 +17,9 @@ const uploadOnCloudinary = async (localFilePath) => {
     });
     //file has been uploaded successfully
     // console.log("file has been uploaded on cloudinary", response.url);
-    fs.unlinkSync(localFilePath)
+    fs.unlinkSync(localFilePath);
     // console.log(response);
-    
+
     return response;
   } catch (error) {
     fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the upload operation got failed
@@ -27,4 +27,33 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (publicId) => {
+  try {
+    if (!publicId) return null;
+
+    const response = await cloudinary.uploader.destroy(publicId);
+    console.log("File deleted from cloudinary:", response);
+    return response;
+  } catch (error) {
+    console.error("Error deleting file from cloudinary:", error);
+    return null;
+  }
+};
+
+// Utility function to extract public_id from cloudinary URL
+const extractPublicIdFromUrl = (cloudinaryUrl) => {
+  if (!cloudinaryUrl) return null;
+
+  try {
+    // Extract public_id from URL format: https://res.cloudinary.com/{cloud_name}/{resource_type}/{type}/{version}/{public_id}.{format}
+    const urlParts = cloudinaryUrl.split("/");
+    const publicIdWithExtension = urlParts[urlParts.length - 1];
+    const publicId = publicIdWithExtension.split(".")[0];
+    return publicId;
+  } catch (error) {
+    console.error("Error extracting public_id from URL:", error);
+    return null;
+  }
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary, extractPublicIdFromUrl };
