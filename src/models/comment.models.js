@@ -9,16 +9,15 @@ const commentSchema = new Schema(
     },
     video: {
       type: Schema.Types.ObjectId,
-      ref:"Video"
+      ref: "Video",
     },
     owner: {
       type: Schema.Types.ObjectId,
-      ref:"User"
+      ref: "User",
     },
-    
   },
   { timestamps: true }
 );
 
-videoSchema.plugin(mongooseAggregatePaginate)
-export const Comment = mongoose.model("Comment",commentSchema)
+commentSchema.plugin(mongooseAggregatePaginate);
+export const Comment = mongoose.model("Comment", commentSchema);
