@@ -57,7 +57,72 @@ const getVideoComments = asyncHandler(async (req, res) => {
 });
 
 const addComment = asyncHandler(async (req, res) => {
-  // TODO: add a comment to a video
+  const { videoId } = req.params;
+  const { content } = req.body;
+
+  // Validate required fields
+  if (!content || content.trim() === "") {
+    throw new ApiError(400, "Comment content is required");
+  }
+
+  // Validate videoId
+  if (!mongoose.isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
+
+  // Create comment
+  const comment = await Comment.create({
+    content: content.trim(),
+    video: videoId,
+    owner: req.user._id,
+  });
+
+  if(!comment){
+    throw new ApiError(400,"comment failed to fetch")
+  }
+
+  // Fetch the created comment with owner details
+  const createdComment = await Comment.aggregate([
+    {
+      $match: {
+        _id: comment._id,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        owner: {
+          $first: "$owner",
+        },
+      },
+    },
+  ]);
+
+  if (!createdComment.length) {
+    throw new ApiError(500, "Something went wrong while creating comment");
+  }
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, createdComment[0], "Comment added successfully")
+    );
 });
 
 const updateComment = asyncHandler(async (req, res) => {
