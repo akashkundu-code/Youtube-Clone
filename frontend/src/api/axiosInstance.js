@@ -1,7 +1,12 @@
 import axios from 'axios'
 
+// In dev, leave VITE_API_URL unset and requests go through Vite's proxy to
+// /api/v1. In production set VITE_API_URL to the deployed backend, e.g.
+// https://your-backend.onrender.com/api/v1
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE,
   withCredentials: true,
 })
 
@@ -15,7 +20,7 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry && !isSkipped) {
       original._retry = true
       try {
-        await axios.post('/api/v1/users/refresh-token', {}, { withCredentials: true })
+        await axios.post(`${API_BASE}/users/refresh-token`, {}, { withCredentials: true })
         return api(original)
       } catch {
         window.location.href = '/login'

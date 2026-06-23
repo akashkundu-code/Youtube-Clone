@@ -3,10 +3,26 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 const app = express();
+
+// CORS_ORIGIN may be "*" (dev) or a comma-separated list of allowed origins
+// (prod). With credentials we must reflect the specific origin rather than
+// send a literal "*", so we validate against the list and echo it back.
+const allowedOrigins = (process.env.CORS_ORIGIN || "*")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   //we use use for middleware
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: function (origin, callback) {
+      // allow same-origin / curl / server-to-server (no Origin header)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   })
 );
