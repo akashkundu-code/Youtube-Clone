@@ -8,7 +8,7 @@ import {
   updateVideo,
 } from "../controllers/video.controller.js";
 import { verifyJWT, optionalVerifyJWT } from "../middleware/auth.middleware.js";
-import { upload } from "../middleware/multer.middleware.js";
+import { upload, uploadImage } from "../middleware/multer.middleware.js";
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router
   // Public read — watch history is recorded only when logged in
   .get(optionalVerifyJWT, getVideoById)
   .delete(verifyJWT, deleteVideo)
-  .patch(verifyJWT, upload.single("thumbnail"), updateVideo);
+  .patch(verifyJWT, uploadImage.single("thumbnail"), updateVideo);
 
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 

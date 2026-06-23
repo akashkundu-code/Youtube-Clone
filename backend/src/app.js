@@ -54,10 +54,21 @@ app.use("/api/v1/dashboard", dashboardRouter);
 // Global error handler — converts thrown ApiError (and any error) into a
 // consistent JSON shape the frontend can read, instead of Express' default HTML.
 import { ApiError } from "./utils/apiErrors.js";
+import multer from "multer";
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   let error = err;
+
+  // Multer rejections (oversize file, too many files, bad type) -> 400
+  if (error instanceof multer.MulterError) {
+    const message =
+      error.code === "LIMIT_FILE_SIZE"
+        ? "File too large. Max 50MB for video, 5MB for images."
+        : error.message;
+    error = new ApiError(400, message);
+  }
+
   if (!(error instanceof ApiError)) {
     const statusCode = error.statusCode || 500;
     error = new ApiError(statusCode, error.message || "Internal Server Error");

@@ -12,13 +12,13 @@ import {
   updateUserAvatar,
   updateUserCoverImage,
 } from "../controllers/user.controller.js";
-import { upload } from "../middleware/multer.middleware.js";
+import { uploadImage } from "../middleware/multer.middleware.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
 router.route("/register").post(
-  upload.fields([
+  uploadImage.fields([
     {
       name: "avatar",
       maxCount: 1,
@@ -42,10 +42,10 @@ router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/account-update").patch(verifyJWT, updateAccountDetails);
 router
   .route("/avatar")
-  .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+  .patch(verifyJWT, uploadImage.single("avatar"), updateUserAvatar);
 router
   .route("/cover-image")
-  .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
+  .patch(verifyJWT, uploadImage.single("coverImage"), updateUserCoverImage);
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/history").get(verifyJWT, getWatchHistory);
 

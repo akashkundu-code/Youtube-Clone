@@ -82,11 +82,24 @@ const getAllVideos = asyncHandler(async (req, res) => {
   );
 });
 
+// Max videos a single user may publish — guards the shared Cloudinary quota.
+const MAX_VIDEOS_PER_USER = 20;
+
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   if (!title?.trim() || !description?.trim()) {
     throw new ApiError(400, "Title and description are required");
+  }
+
+  // Enforce the per-user cap before touching Cloudinary so a rejected
+  // request never consumes upload quota.
+  const userVideoCount = await Video.countDocuments({ owner: req.user._id });
+  if (userVideoCount >= MAX_VIDEOS_PER_USER) {
+    throw new ApiError(
+      403,
+      `Upload limit reached (${MAX_VIDEOS_PER_USER} videos per account). Delete a video to upload more.`
+    );
   }
 
   const videoFileLocalPath = req.files?.videoFile?.[0]?.path;
