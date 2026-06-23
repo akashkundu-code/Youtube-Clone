@@ -7,6 +7,7 @@ import {
   extractPublicIdFromUrl,
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import { getCookieOptions } from "../utils/cookieOptions.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -178,11 +179,7 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  const options = {
-    //used for cookiee
-    httpOnly: true,
-    secure: true,
-  };
+  const options = getCookieOptions(); //used for cookiee
 
   // returning the result
   return res
@@ -214,10 +211,7 @@ const logoutUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
+  const options = getCookieOptions();
 
   return res
     .status(200)
@@ -245,10 +239,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "refresh token is expired or used");
     }
 
-    const options = {
-      httpOnly: true,
-      secure: true,
-    };
+    const options = getCookieOptions();
 
     const { accessToken, newRefreshToken } =
       await generateAccessAndRefreshToken(user._id);
