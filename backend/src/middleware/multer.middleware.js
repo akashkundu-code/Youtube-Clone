@@ -1,5 +1,11 @@
 import multer from "multer";
 import path from "path";
+import os from "os";
+
+// Use the OS temp dir so this works on hosts with a read-only filesystem
+// (e.g. Vercel serverless, where only /tmp is writable). Locally this is the
+// normal system temp folder.
+const TEMP_DIR = os.tmpdir();
 
 // Max sizes (bytes). Keep these conservative to protect the Cloudinary quota.
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -15,7 +21,7 @@ const ALLOWED_IMAGE_MIME = [
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "./public/temp");
+    cb(null, TEMP_DIR);
   },
   filename: function (req, file, cb) {
     // Prefix with a timestamp so two users can't overwrite each other's temp
