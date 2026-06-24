@@ -34,7 +34,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar onMenuClick={() => setSidebarOpen((v) => !v)} />
-      <Sidebar open={sidebarOpen} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main
         className={`pt-14 transition-all duration-200 ${sidebarOpen ? 'md:ml-60' : 'ml-0'}`}

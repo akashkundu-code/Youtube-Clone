@@ -40,7 +40,7 @@ export default function Navbar({ onMenuClick }) {
       </div>
 
       {/* Center: search */}
-      <form onSubmit={handleSearch} className="flex items-center flex-1 max-w-xl mx-4">
+      <form onSubmit={handleSearch} className="flex items-center flex-1 max-w-xl mx-2 sm:mx-4">
         <div className="flex flex-1 border border-gray-300 rounded-full overflow-hidden">
           <input
             type="text"

@@ -43,13 +43,13 @@ const navItems = [
   },
 ]
 
-export default function Sidebar({ open }) {
+export default function Sidebar({ open, onClose }) {
   const { user } = useAuth()
 
   return (
     <>
-      {/* Overlay for mobile */}
-      {open && <div className="fixed inset-0 z-30 bg-black/20 md:hidden" />}
+      {/* Overlay for mobile — tap outside to close */}
+      {open && <div className="fixed inset-0 z-30 bg-black/20 md:hidden" onClick={onClose} />}
 
       <aside
         className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] z-40 bg-white transition-all duration-200 overflow-y-auto

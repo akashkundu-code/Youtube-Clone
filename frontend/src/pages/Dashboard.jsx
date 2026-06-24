@@ -72,7 +72,7 @@ export default function Dashboard() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold">Channel Dashboard</h1>
           <p className="text-gray-500 text-sm mt-0.5">Welcome back, {user?.fullName}</p>
@@ -165,7 +165,7 @@ export default function Dashboard() {
         ) : (
           <div className="divide-y divide-gray-100">
             {videos.map((video) => (
-              <div key={video._id} className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors">
+              <div key={video._id} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
                 <Link to={`/video/${video._id}`} className="flex-shrink-0">
                   <div className="w-24 h-14 bg-gray-200 rounded-lg overflow-hidden">
                     {video.thumbnail ? (
@@ -186,10 +186,10 @@ export default function Dashboard() {
                     <span>{video.likeCount || 0} likes</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleTogglePublish(video._id)}
-                    className={`text-xs px-3 py-1 rounded-full font-medium transition-colors
+                    className={`text-xs px-2 sm:px-3 py-1 rounded-full font-medium transition-colors whitespace-nowrap
                       ${video.isPublished
                         ? 'bg-green-100 text-green-700 hover:bg-green-200'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
